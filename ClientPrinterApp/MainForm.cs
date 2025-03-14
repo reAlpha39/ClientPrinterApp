@@ -29,7 +29,7 @@ namespace ClientPrinterApp
         {
             trayIcon = new NotifyIcon();
             trayIcon.Icon = SystemIcons.Application;
-            trayIcon.Text = "Client Printer Service";
+            trayIcon.Text = "Printer Service Helper";
             trayIcon.Visible = true;
 
             // Create context menu for tray icon
@@ -189,13 +189,38 @@ namespace ClientPrinterApp
                     // Print the data
                     string errorMessage = "";
                     bool success = PrintRawData(printData.PrinterName, printData.DocumentName, rawData, out errorMessage);
-                    
+
                     LogMessage($"Print request to {printData.PrinterName}: {(success ? "Success" : "Failed - " + errorMessage)}");
 
                     var result = new
                     {
                         Success = success,
                         Message = success ? "Print job sent successfully" : errorMessage
+                    };
+
+                    SendJsonResponse(response, result);
+                }
+                else if (request.HttpMethod == "POST" && request.Url.AbsolutePath == "/print-sato")
+                {
+                    // Read the print request
+                    string requestBody;
+                    using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
+                    {
+                        requestBody = reader.ReadToEnd();
+                    }
+
+                    var satoRequest = JsonConvert.DeserializeObject<SatoLabelRequest>(requestBody);
+
+                    // Print using the SATO format
+                    string errorMessage = "";
+                    bool success = SendSatoLabel(satoRequest, out errorMessage);
+
+                    LogMessage($"SATO print request to {satoRequest.PrinterName}: {(success ? "Success" : "Failed - " + errorMessage)}");
+
+                    var result = new
+                    {
+                        Success = success,
+                        Message = success ? "SATO print job sent successfully" : errorMessage
                     };
 
                     SendJsonResponse(response, result);
@@ -223,6 +248,73 @@ namespace ClientPrinterApp
                     response.Close();
                 }
                 catch { /* Ignore errors in error handling */ }
+            }
+        }
+
+        private bool SendSatoLabel(SatoLabelRequest labelData, out string errorMessage)
+        {
+            try
+            {
+                // Define control characters
+                char STX = (char)0x02; // Start of Text
+                char ESC = (char)0x1b; // Escape
+                char ETX = (char)0x03; // End of Text
+
+                // First part of the command (up to logo editing)
+                string EditWk = "";
+
+                // Set STX
+                EditWk = STX.ToString();
+
+                // Start data transmission
+                EditWk += ESC + "A";
+
+                // Set paper size (width=200, height=600)
+                EditWk += ESC + "A1V00200H0600";
+
+                // Title editing
+                // Position: H=220, V=30, Magnification: 1x1
+                EditWk += ESC + "%0" + ESC + "V0030" + ESC + "H0220" + ESC + "P00" + ESC + "L0101";
+                EditWk += ESC + "XM " + labelData.Title;
+
+                // Barcode editing
+                // Position: H=260, V=60
+                EditWk += ESC + "V0060" + ESC + "H0260";
+                // Barcode type (CODE39), magnification (2x)
+                EditWk += ESC + "D101060*" + labelData.Barcode + "*";
+
+                // Human-readable barcode text
+                // Position: H=230, V=130, Magnification: 1x1
+                EditWk += ESC + "%0" + ESC + "V00130" + ESC + "H0230" + ESC + "P00" + ESC + "L0101";
+                EditWk += ESC + "X22,*" + labelData.Barcode + "*";
+
+                // Convert first part to byte array using Shift-JIS encoding
+                byte[] bStData = Encoding.GetEncoding("Shift-JIS").GetBytes(EditWk);
+
+                // Second part of the command (print quantity to end)
+                EditWk = ESC + "Q1";
+
+                // End data transmission
+                EditWk += ESC + "Z";
+
+                // Set ETX
+                EditWk += ETX.ToString();
+
+                // Convert second part to byte array using Shift-JIS encoding
+                byte[] bEnData = Encoding.GetEncoding("Shift-JIS").GetBytes(EditWk);
+
+                // Combine byte arrays
+                byte[] bPrData = new byte[bStData.Length + bEnData.Length];
+                Array.Copy(bStData, 0, bPrData, 0, bStData.Length);
+                Array.Copy(bEnData, 0, bPrData, bStData.Length, bEnData.Length);
+
+                // Print the data
+                return PrintRawData(labelData.PrinterName, "SATO Label", bPrData, out errorMessage);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Exception in SATO label printing: {ex.Message}";
+                return false;
             }
         }
 
@@ -337,7 +429,6 @@ namespace ClientPrinterApp
         }
 
         #endregion
-
     }
 
     public class PrintRequest
@@ -348,6 +439,12 @@ namespace ClientPrinterApp
         public bool IsBase64 { get; set; }
     }
 
+    public class SatoLabelRequest
+    {
+        public string PrinterName { get; set; }
+        public string Title { get; set; }
+        public string Barcode { get; set; }
+    }
 
     // Designer-generated code for the form
     public partial class MainForm
@@ -425,7 +522,7 @@ namespace ClientPrinterApp
             this.Controls.Add(this.txtLog);
             this.MinimumSize = new System.Drawing.Size(400, 250);
             this.Name = "MainForm";
-            this.Text = "Client Printer Service";
+            this.Text = "Printer Service Helper";
             this.ResumeLayout(false);
             this.PerformLayout();
         }
