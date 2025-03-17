@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.IO;
 using System.Text;
 using System.Net;
@@ -17,12 +18,80 @@ namespace ClientPrinterApp
         private bool isRunning = false;
         private string apiPort = "8085";
         private NotifyIcon trayIcon;
+        private bool startupEnabled = false;
+        private readonly string appName = "PrinterServiceHelper";
 
         public MainForm()
         {
             InitializeComponent();
             InitializeTrayIcon();
+            CheckStartupStatus();
             txtPort.Text = apiPort;
+        }
+
+        private void CheckStartupStatus()
+        {
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", false))
+            {
+                startupEnabled = key?.GetValue(appName) != null;
+                updateToggleBtnAutoStartText();
+            }
+        }
+
+        private void updateToggleBtnAutoStartText()
+        {
+
+
+            if (startupEnabled)
+            {
+                btnAutoStart.Text = "Auto Start ON";
+            }
+            else
+            {
+                btnAutoStart.Text = "Auto Start OFF";
+            }
+
+        }
+
+        private void btnAutoStart_Click(object sender, EventArgs e)
+        {
+            if (startupEnabled)
+            {
+                DisableStartup();
+            }
+            else
+            {
+                EnableStartup();
+            }
+
+            startupEnabled = !startupEnabled;
+
+            updateToggleBtnAutoStartText();
+
+            
+
+        }
+
+        private void EnableStartup()
+        {
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+            {
+                // Add the application to the startup list
+                key?.SetValue(appName, Application.ExecutablePath);
+            }
+
+            MessageBox.Show("Helper added to the startup!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void DisableStartup()
+        {
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+            {
+                // Remove the application from the startup list
+                key?.DeleteValue(appName, false);
+            }
+
+            MessageBox.Show("Helper removed from startup!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void InitializeTrayIcon()
@@ -452,6 +521,7 @@ namespace ClientPrinterApp
         private System.ComponentModel.IContainer components = null;
         private TextBox txtLog;
         private Button btnStartStop;
+        private Button btnAutoStart;
         private Label lblPort;
         private TextBox txtPort;
 
@@ -468,6 +538,7 @@ namespace ClientPrinterApp
         {
             this.txtLog = new System.Windows.Forms.TextBox();
             this.btnStartStop = new System.Windows.Forms.Button();
+            this.btnAutoStart = new System.Windows.Forms.Button();
             this.lblPort = new System.Windows.Forms.Label();
             this.txtPort = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
@@ -487,13 +558,23 @@ namespace ClientPrinterApp
             // 
             // btnStartStop
             // 
-            this.btnStartStop.Location = new System.Drawing.Point(343, 12);
+            this.btnStartStop.Location = new System.Drawing.Point(372, 12);
             this.btnStartStop.Name = "btnStartStop";
-            this.btnStartStop.Size = new System.Drawing.Size(129, 23);
+            this.btnStartStop.Size = new System.Drawing.Size(100, 23);
             this.btnStartStop.TabIndex = 1;
             this.btnStartStop.Text = "Start Server";
             this.btnStartStop.UseVisualStyleBackColor = true;
             this.btnStartStop.Click += new System.EventHandler(this.btnStartStop_Click);
+            //
+            // btnAutoStart
+            //
+            this.btnAutoStart.Location = new System.Drawing.Point(248, 12);
+            this.btnAutoStart.Name = "btnAutoStart";
+            this.btnAutoStart.Size = new System.Drawing.Size(112, 23);
+            this.btnAutoStart.TabIndex = 2;
+            this.btnAutoStart.Text = "Auto Start OFF";
+            this.btnAutoStart.UseVisualStyleBackColor = true;
+            this.btnAutoStart.Click += new System.EventHandler(this.btnAutoStart_Click);
             // 
             // lblPort
             // 
@@ -501,7 +582,7 @@ namespace ClientPrinterApp
             this.lblPort.Location = new System.Drawing.Point(12, 17);
             this.lblPort.Name = "lblPort";
             this.lblPort.Size = new System.Drawing.Size(29, 13);
-            this.lblPort.TabIndex = 2;
+            this.lblPort.TabIndex = 3;
             this.lblPort.Text = "Port:";
             // 
             // txtPort
@@ -509,7 +590,7 @@ namespace ClientPrinterApp
             this.txtPort.Location = new System.Drawing.Point(47, 14);
             this.txtPort.Name = "txtPort";
             this.txtPort.Size = new System.Drawing.Size(100, 20);
-            this.txtPort.TabIndex = 3;
+            this.txtPort.TabIndex = 4;
             // 
             // MainForm
             // 
@@ -518,9 +599,11 @@ namespace ClientPrinterApp
             this.ClientSize = new System.Drawing.Size(484, 261);
             this.Controls.Add(this.txtPort);
             this.Controls.Add(this.lblPort);
+            this.Controls.Add(this.btnAutoStart);
             this.Controls.Add(this.btnStartStop);
             this.Controls.Add(this.txtLog);
-            this.MinimumSize = new System.Drawing.Size(400, 250);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
             this.Name = "MainForm";
             this.Text = "Printer Service Helper";
             this.ResumeLayout(false);
