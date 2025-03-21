@@ -27,6 +27,127 @@ namespace ClientPrinterApp
             InitializeTrayIcon();
             CheckStartupStatus();
             txtPort.Text = apiPort;
+
+            // Start server automatically if auto start is enabled
+            if (startupEnabled)
+            {
+                StartServerAutomatically();
+            }
+        }
+
+        private void StartServerAutomatically()
+        {
+            apiPort = txtPort.Text;
+            StartServer();
+            btnStartStop.Text = "Stop Server";
+            LogMessage($"Server started automatically on port {apiPort}");
+            txtPort.Enabled = false;
+            isRunning = true;
+        }
+
+        #region Windows Form Designer generated code
+
+        private System.ComponentModel.IContainer components = null;
+        private TextBox txtLog;
+        private Button btnStartStop;
+        private Button btnAutoStart;
+        private Label lblPort;
+        private TextBox txtPort;
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        private void InitializeComponent()
+        {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+            this.txtLog = new System.Windows.Forms.TextBox();
+            this.btnStartStop = new System.Windows.Forms.Button();
+            this.btnAutoStart = new System.Windows.Forms.Button();
+            this.lblPort = new System.Windows.Forms.Label();
+            this.txtPort = new System.Windows.Forms.TextBox();
+            this.SuspendLayout();
+            // 
+            // txtLog
+            // 
+            this.txtLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtLog.Location = new System.Drawing.Point(12, 41);
+            this.txtLog.Multiline = true;
+            this.txtLog.Name = "txtLog";
+            this.txtLog.ReadOnly = true;
+            this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.txtLog.Size = new System.Drawing.Size(460, 208);
+            this.txtLog.TabIndex = 0;
+            // 
+            // btnStartStop
+            // 
+            this.btnStartStop.Location = new System.Drawing.Point(372, 12);
+            this.btnStartStop.Name = "btnStartStop";
+            this.btnStartStop.Size = new System.Drawing.Size(100, 23);
+            this.btnStartStop.TabIndex = 1;
+            this.btnStartStop.Text = "Start Server";
+            this.btnStartStop.UseVisualStyleBackColor = true;
+            this.btnStartStop.Click += new System.EventHandler(this.btnStartStop_Click);
+            // 
+            // btnAutoStart
+            // 
+            this.btnAutoStart.Location = new System.Drawing.Point(248, 12);
+            this.btnAutoStart.Name = "btnAutoStart";
+            this.btnAutoStart.Size = new System.Drawing.Size(112, 23);
+            this.btnAutoStart.TabIndex = 2;
+            this.btnAutoStart.Text = "Auto Start OFF";
+            this.btnAutoStart.UseVisualStyleBackColor = true;
+            this.btnAutoStart.Click += new System.EventHandler(this.btnAutoStart_Click);
+            // 
+            // lblPort
+            // 
+            this.lblPort.AutoSize = true;
+            this.lblPort.Location = new System.Drawing.Point(12, 17);
+            this.lblPort.Name = "lblPort";
+            this.lblPort.Size = new System.Drawing.Size(29, 13);
+            this.lblPort.TabIndex = 3;
+            this.lblPort.Text = "Port:";
+            // 
+            // txtPort
+            // 
+            this.txtPort.Location = new System.Drawing.Point(47, 14);
+            this.txtPort.Name = "txtPort";
+            this.txtPort.Size = new System.Drawing.Size(100, 20);
+            this.txtPort.TabIndex = 4;
+            // 
+            // MainForm
+            // 
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+            this.ClientSize = new System.Drawing.Size(484, 261);
+            this.Controls.Add(this.txtPort);
+            this.Controls.Add(this.lblPort);
+            this.Controls.Add(this.btnAutoStart);
+            this.Controls.Add(this.btnStartStop);
+            this.Controls.Add(this.txtLog);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MaximizeBox = false;
+            this.MinimumSize = new System.Drawing.Size(400, 250);
+            this.Name = "MainForm";
+            this.Text = "Printer Service Helper";
+            this.Load += new System.EventHandler(this.MainForm_Load);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
+        }
+
+        #endregion
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            // Your form load code here
         }
 
         private void CheckStartupStatus()
@@ -40,8 +161,6 @@ namespace ClientPrinterApp
 
         private void updateToggleBtnAutoStartText()
         {
-
-
             if (startupEnabled)
             {
                 btnAutoStart.Text = "Auto Start ON";
@@ -50,7 +169,6 @@ namespace ClientPrinterApp
             {
                 btnAutoStart.Text = "Auto Start OFF";
             }
-
         }
 
         private void btnAutoStart_Click(object sender, EventArgs e)
@@ -65,11 +183,7 @@ namespace ClientPrinterApp
             }
 
             startupEnabled = !startupEnabled;
-
             updateToggleBtnAutoStartText();
-
-            
-
         }
 
         private void EnableStartup()
@@ -97,7 +211,7 @@ namespace ClientPrinterApp
         private void InitializeTrayIcon()
         {
             trayIcon = new NotifyIcon();
-            trayIcon.Icon = SystemIcons.Application;
+            trayIcon.Icon = this.Icon;
             trayIcon.Text = "Printer Service Helper";
             trayIcon.Visible = true;
 
@@ -513,101 +627,5 @@ namespace ClientPrinterApp
         public string PrinterName { get; set; }
         public string Title { get; set; }
         public string Barcode { get; set; }
-    }
-
-    // Designer-generated code for the form
-    public partial class MainForm
-    {
-        private System.ComponentModel.IContainer components = null;
-        private TextBox txtLog;
-        private Button btnStartStop;
-        private Button btnAutoStart;
-        private Label lblPort;
-        private TextBox txtPort;
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
-        private void InitializeComponent()
-        {
-            this.txtLog = new System.Windows.Forms.TextBox();
-            this.btnStartStop = new System.Windows.Forms.Button();
-            this.btnAutoStart = new System.Windows.Forms.Button();
-            this.lblPort = new System.Windows.Forms.Label();
-            this.txtPort = new System.Windows.Forms.TextBox();
-            this.SuspendLayout();
-            // 
-            // txtLog
-            // 
-            this.txtLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtLog.Location = new System.Drawing.Point(12, 41);
-            this.txtLog.Multiline = true;
-            this.txtLog.Name = "txtLog";
-            this.txtLog.ReadOnly = true;
-            this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtLog.Size = new System.Drawing.Size(460, 208);
-            this.txtLog.TabIndex = 0;
-            // 
-            // btnStartStop
-            // 
-            this.btnStartStop.Location = new System.Drawing.Point(372, 12);
-            this.btnStartStop.Name = "btnStartStop";
-            this.btnStartStop.Size = new System.Drawing.Size(100, 23);
-            this.btnStartStop.TabIndex = 1;
-            this.btnStartStop.Text = "Start Server";
-            this.btnStartStop.UseVisualStyleBackColor = true;
-            this.btnStartStop.Click += new System.EventHandler(this.btnStartStop_Click);
-            //
-            // btnAutoStart
-            //
-            this.btnAutoStart.Location = new System.Drawing.Point(248, 12);
-            this.btnAutoStart.Name = "btnAutoStart";
-            this.btnAutoStart.Size = new System.Drawing.Size(112, 23);
-            this.btnAutoStart.TabIndex = 2;
-            this.btnAutoStart.Text = "Auto Start OFF";
-            this.btnAutoStart.UseVisualStyleBackColor = true;
-            this.btnAutoStart.Click += new System.EventHandler(this.btnAutoStart_Click);
-            // 
-            // lblPort
-            // 
-            this.lblPort.AutoSize = true;
-            this.lblPort.Location = new System.Drawing.Point(12, 17);
-            this.lblPort.Name = "lblPort";
-            this.lblPort.Size = new System.Drawing.Size(29, 13);
-            this.lblPort.TabIndex = 3;
-            this.lblPort.Text = "Port:";
-            // 
-            // txtPort
-            // 
-            this.txtPort.Location = new System.Drawing.Point(47, 14);
-            this.txtPort.Name = "txtPort";
-            this.txtPort.Size = new System.Drawing.Size(100, 20);
-            this.txtPort.TabIndex = 4;
-            // 
-            // MainForm
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(484, 261);
-            this.Controls.Add(this.txtPort);
-            this.Controls.Add(this.lblPort);
-            this.Controls.Add(this.btnAutoStart);
-            this.Controls.Add(this.btnStartStop);
-            this.Controls.Add(this.txtLog);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            this.MaximizeBox = false;
-            this.Name = "MainForm";
-            this.Text = "Printer Service Helper";
-            this.ResumeLayout(false);
-            this.PerformLayout();
-        }
     }
 }
